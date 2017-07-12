@@ -1,0 +1,36 @@
+---
+- hosts: "{{ host }}"
+  vars:
+    host: localhost
+  tasks:
+    - name: Assure git is installed
+      package: name=git state=present
+    - name: Assure emacs is installed
+      package: name=emacs state=present
+- hosts: "{{ host }}"
+  vars:
+    user: root
+    host: localhost
+  become_user: "{{ user }}"
+  become: True
+  tasks:
+    - name: Create config directory
+      file: state=directory path=~/.emacs.d
+    - name: Clone the repo
+      git:
+        repo: https://github.com/0x17de/emacs-config
+        dest: ~/.emacs.d/_0x17de/
+    - name: Assure base config exists
+      file: state=touch path=~/.emacs
+    - name: Update base configuration
+      blockinfile:
+        dest: ~/.emacs
+        block: |
+          (add-to-list 'load-path "~/.emacs.d/_0x17de/")
+          (load "_0x17de-emacs")
+#'
+        marker: ";; ANSIBLE MANAGED BLOCK"
+        backup: yes
+    - name: Initialize emacs configuration
+      shell: emacs -batch -eval '(load-file "~/.emacs")'
+
