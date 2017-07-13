@@ -1,0 +1,17 @@
+- hosts: "{{ host }}"
+  vars:
+    host: localhost
+    zsh_config_path: /etc/zshrc
+  tasks:
+    - name: Install zsh
+      package: name=zsh state=present
+    - name: Download grml config
+      uri:
+        url: https://git.grml.org/f/grml-etc-core/etc/zsh/zshrc
+        dest: "{{ zsh_config_path }}"
+        backup: yes
+    - name: Fix grml config
+      replace:
+        dest: "{{ zsh_config_path }}"
+        regexp: menu select=5$
+        replace: menu select=1
