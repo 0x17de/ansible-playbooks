@@ -1,0 +1,45 @@
+- hosts: "{{ host }}"
+  vars:
+    host: localhost
+    kube_service_ip_range: 192.168.44.0/24
+    etcd_ip: 192.168.40.1
+    etcd_config_path: /etc/sysconfig/etcd
+  tasks:
+    - name: Add virtualization repo
+      zypper_repository:
+        repo: http://download.opensuse.org/repositories/Virtualization:containers/openSUSE_Leap_42.2
+        name: Virtualization:containers
+        state: present
+
+    - name: Install etcd package
+      package: name=etcd state=present
+    - name: Install kubernetes master package
+      package: name=kubernetes-master state=present
+    - name: Install kubernetes client package
+      package: name=kubernetes-client state=present
+
+    - name: Install etcd config
+      template: src=kubernetes/etcd.j2 dest={{ etcd_config_path }}
+    - name: Install kubelet-apiserver config
+      template: src=kubernetes/apiserver.j2 dest=/etc/kubernetes/apiserver
+    - name: Install kubelet-controller-manager config
+      template: src=kubernetes/controller-manager.j2 dest=/etc/kubernetes/controller-manager
+    - name: Install kubelet-scheduler config
+      template: src=kubernetes/scheduler.j2 dest=/etc/kubernetes/scheduler
+
+    - name: Check for previously generated RSA bearer key
+      stat: path=/etc/kubernetes/bearer.key
+      register: bearer
+    - name: Generate RSA key for bearer token signing if non-existent
+      command: openssl genrsa -out /etc/kubernetes/bearer.key 4096
+      when: bearer.stat.exists == False
+
+    - name: Enable etcd
+      service: name=etcd state=restarted enabled=yes
+    - name: Enable kube-apiserver
+      service: name=kube-apiserver state=restarted enabled=yes
+    - name: Enable kube-controller-manager
+      service: name=kube-controller-manager state=restarted enabled=yes
+    - name: Enable kube-scheduler
+      service: name=kube-scheduler state=restarted enabled=yes
+

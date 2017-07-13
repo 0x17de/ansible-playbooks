@@ -1,0 +1,28 @@
+- hosts: "{{ host }}"
+  vars:
+    host: slave
+    master_ip: 192.168.40.1
+  tasks:
+    - name: Add virtualization repo
+      zypper_repository:
+        repo: http://download.opensuse.org/repositories/Virtualization:containers/openSUSE_Leap_42.2
+        name: Virtualization:containers
+        state: present
+
+    - name: Install docker
+      package: name=docker state=present
+    - name: Install kubernetes node package
+      package: name=kubernetes-node state=present
+
+    - name: Install kubelet config
+      template: src=kubernetes/kubelet.j2 dest=/etc/kubernetes/kubelet
+    - name: Install proxy config
+      template: src=kubernetes/proxy.j2 dest=/etc/kubernetes/proxy
+
+    - name: Enable docker
+      service: name=docker state=started enabled=yes
+    - name: Enable kube-proxy
+      service: name=kube-proxy state=restarted enabled=yes
+    - name: Enable kubelet
+      service: name=kubelet state=restarted enabled=yes
+
