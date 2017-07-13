@@ -1,9 +1,10 @@
 - hosts: "{{ host }}"
   vars:
     host: localhost
-    kube_service_ip_range: 192.168.44.0/24
-    etcd_ip: 192.168.40.1
+    kube_service_ip_range: 192.168.57.0/24
     etcd_config_path: /etc/sysconfig/etcd
+    flannel_config_path: /etc/sysconfig/flanneld
+    master_ip: 192.168.56.101
   tasks:
     - name: Add virtualization repo
       zypper_repository:
@@ -13,6 +14,8 @@
 
     - name: Install etcd package
       package: name=etcd state=present
+    - name: Install flannel package
+      package: name=flannel state=present
     - name: Install kubernetes master package
       package: name=kubernetes-master state=present
     - name: Install kubernetes client package
@@ -20,6 +23,10 @@
 
     - name: Install etcd config
       template: src=kubernetes/etcd.j2 dest={{ etcd_config_path }}
+    - name: Install flannel config
+      template: src=kubernetes/flanneld.j2 dest={{ flannel_config_path }}
+    - name: Install kubernetes base-config
+      template: src=kubernetes/config.j2 dest=/etc/kubernetes/config
     - name: Install kubelet-apiserver config
       template: src=kubernetes/apiserver.j2 dest=/etc/kubernetes/apiserver
     - name: Install kubelet-controller-manager config
