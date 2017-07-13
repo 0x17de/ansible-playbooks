@@ -1,0 +1,18 @@
+- hosts: "{{ host }}"
+  vars:
+    host: localhost
+  tasks:
+    - name: Check version of currently installed kompose tool
+      command: kompose version
+      register: kompose_version
+    - name: Retrieve URL of latest download
+      uri:
+        url: https://github.com/kubernetes/kompose/releases/latest
+      register: latest
+    - name: Download latest version
+      uri:
+        url: "{{ latest.url | regex_replace(\"/tag/\", \"/download/\") }}/kompose-linux-amd64"
+        dest: /usr/local/sbin/kompose
+      when: (kompose_version.stdout | regex_replace(" .*", "")) != (latest.url | regex_replace(".*/tag/v", ""))
+    - name: Update permissions
+      file: mode=u+x path=/usr/local/sbin/kompose
